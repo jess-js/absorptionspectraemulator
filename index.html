@@ -1,0 +1,696 @@
+<html>
+  <head>
+    <style>
+      #star-system {
+        position: absolute;
+        top: 42%;
+        left: 0px;
+        width: 600px;
+        height: 600px;
+        transform: translateY(-50%);
+      }
+
+      #photosphere {
+        top: 50%;
+        left: 50%;
+        width: 600px;
+        height: 600px;
+        transform: translate(-50%, -50%);
+        position: absolute;
+      }
+
+      #star {
+        position: absolute;
+        top: 47%;
+        left: 50%;
+        width: 350px;
+        height: 350px;
+        transform: translate(-50%, -50%);
+      }
+
+      #telescope {
+        width: 300px;
+        height: 300px;
+        position: absolute;
+        top: 50%;
+        left: 75%;
+        transform: translateY(-50%);
+      }
+
+      #footer {
+        left: 0px;
+        bottom: 0px;
+        position: fixed;
+        height: 135px;
+        width: 100%;
+        background-color: ghostwhite;
+        border-top: 1px solid black;
+        z-index: 1;
+      }
+
+      #container {
+        position: absolute;
+        top: 10px;
+        left: 120px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #elements {
+        width: 140px;
+        height: 25px;
+        display: block;
+      }
+
+      #strip {
+        width: 176px;
+        height: 56px;
+        background-color: lightgrey;
+      }
+
+      .elementSelector {
+        width: 50px;
+        height: 50px;
+        display: inline-block;
+        margin: 3px;
+        cursor: pointer;
+      }
+
+      .elementSelector:hover {
+        transform: scale(1.1);
+      }
+
+      /* Spectra UI */
+      #spectralContainer {
+        width: 400px;
+        height: 170px;
+        position: absolute;
+        right: 100px;
+        top: 70%;
+        transform: translateY(-50%);
+      }
+
+      .spectra {
+        position: absolute;
+        width: 400px;
+        height: 100px;
+        top: 20px;
+        left: 0px;
+      }
+
+      /* draggable region */
+      #sliderTrack {
+        position: absolute;
+        left: 0;
+        top: 10px;
+        width: 400px;
+        height: 30px;
+        /* uncomment to debug */
+        /* background: rgba(0,0,0,0.06); border-radius: 8px; */
+      }
+
+      #spectralArrow {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 20px;
+        height: 20px;
+        transform: translateY(-50%);
+        cursor: grab;
+        user-select: none;
+        -webkit-user-drag: none;
+        touch-action: none;
+      }
+
+      #spectralArrow:active {
+        cursor: grabbing;
+      }
+
+      /* particles */
+      .particle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: translate(-50%, -50%);
+  animation: flyOut var(--life, 900ms) linear forwards;
+  z-index: 0;            /* behind footer (footer is z-index: 1) */
+}
+
+
+      @keyframes flyOut {
+  to {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)));
+  }
+}
+
+      /* Tour overlay */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 9999;
+}
+
+.tour-overlay.hidden { display: none; }
+
+.tour-tooltip {
+  position: fixed;
+  max-width: 360px;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.tour-text {
+  font-size: 14px;
+  line-height: 1.35;
+  color: #111;
+}
+
+.tour-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tour-btn {
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  background: #111;
+  color: #fff;
+}
+
+.tour-btn-secondary {
+  background: #eee;
+  color: #111;
+}
+
+
+    </style>
+  </head>
+
+  <body>
+
+<img id="continuousSpectrum" src="continuous-spectrum.png" style="display: none;">
+<canvas id="spectrumCanvas" width="400" height="1" style="display:none;"></canvas>
+
+
+    <div id="star-system">
+      <img src="photosphere.png" id="photosphere" />
+      <img src="star.png" id="star" />
+    </div>
+
+    <img src="telescope.png" id="telescope" />
+
+    <div id="footer">
+      <div id="container">
+        <img src="elements.png" id="elements" />
+        <div id="strip">
+          <img
+            src="hydrogen.png"
+            class="elementSelector"
+            onclick="changeElement('hydrogen');"
+          />
+          <img
+            src="helium.png"
+            class="elementSelector"
+            onclick="changeElement('helium');"
+          />
+          <img
+            src="lithium-icon.png"
+            class="elementSelector"
+            onclick="changeElement('lithium');"
+          />
+        </div>
+      </div>
+
+      <div id="spectralContainer">
+        <img src="hydrogen-spectra.png" class="spectra" id="spectralId" />
+        <div id="sliderTrack">
+          <img src="arrow.png" id="spectralArrow" draggable="false" />
+        </div>
+      </div>
+    </div>
+
+<div id="tourOverlay" class="tour-overlay hidden">
+  <div id="tourTooltip" class="tour-tooltip">
+    <div id="tourText" class="tour-text"></div>
+    <div class="tour-actions">
+      <button id="tourClose" class="tour-btn tour-btn-secondary">Close</button>
+      <button id="tourNext" class="tour-btn">Next</button>
+    </div>
+  </div>
+</div>
+
+
+    <script>
+
+      var scatterOnPhotosphere = false;
+      var globalEl = "hydrogen";
+
+  function changeElement(el) {
+    const x = document.getElementById("spectralId");
+    if (el === "hydrogen") x.src = "hydrogen-spectra.png";
+    else if (el === "helium") x.src = "helium-spectra.png";
+    else if (el === "lithium") x.src = "lithium-spectra.png";
+    globalEl = el;
+  }
+
+  let spectralValue = 0;
+
+  const track = document.getElementById("sliderTrack");
+  const arrow = document.getElementById("spectralArrow");
+
+  let dragging = false;
+  let grabOffsetX = 0;
+
+
+  function updateFromArrowX(xPx) {
+    const rect = track.getBoundingClientRect();
+    const arrowW = arrow.getBoundingClientRect().width;
+
+    const x = Math.max(0, Math.min(xPx, rect.width - arrowW));
+    arrow.style.left = x + "px";
+
+    const usable = rect.width - arrowW;
+    spectralValue = usable > 0 ? x / usable : 0;
+    sampleSpectrumColor(spectralValue);
+  }
+
+  function setArrowFromClientX(clientX) {
+    const rect = track.getBoundingClientRect();
+    const xPx = clientX - rect.left - grabOffsetX;
+    updateFromArrowX(xPx);
+  }
+
+  arrow.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    arrow.setPointerCapture(e.pointerId);
+
+    const a = arrow.getBoundingClientRect();
+    grabOffsetX = e.clientX - a.left;
+
+    setArrowFromClientX(e.clientX);
+  });
+
+  arrow.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    setArrowFromClientX(e.clientX);
+  });
+
+  arrow.addEventListener("pointerup", () => (dragging = false));
+  arrow.addEventListener("pointercancel", () => (dragging = false));
+
+  track.addEventListener("pointerdown", (e) => {
+    if (e.target === arrow) return;
+    grabOffsetX = arrow.getBoundingClientRect().width / 2;
+    setArrowFromClientX(e.clientX);
+  });
+
+  window.addEventListener("load", () => {
+    updateFromArrowX(0);
+  });
+
+  function rayIntersectsRect(ox, oy, dx, dy, rect) {
+    let tMin = -Infinity;
+    let tMax = Infinity;
+
+    if (dx !== 0) {
+      const tx1 = (rect.left - ox) / dx;
+      const tx2 = (rect.right - ox) / dx;
+      tMin = Math.max(tMin, Math.min(tx1, tx2));
+      tMax = Math.min(tMax, Math.max(tx1, tx2));
+    } else if (ox < rect.left || ox > rect.right) {
+      return null;
+    }
+
+    if (dy !== 0) {
+      const ty1 = (rect.top - oy) / dy;
+      const ty2 = (rect.bottom - oy) / dy;
+      tMin = Math.max(tMin, Math.min(ty1, ty2));
+      tMax = Math.min(tMax, Math.max(ty1, ty2));
+    } else if (oy < rect.top || oy > rect.bottom) {
+      return null;
+    }
+
+    if (tMax >= Math.max(tMin, 0)) {
+      return tMin > 0 ? tMin : tMax;
+    }
+    return null;
+  }
+
+  function rayHitsCircle(ox, oy, dx, dy, cx, cy, radius) {
+    const fx = ox - cx;
+    const fy = oy - cy;
+
+    const b = 2 * (fx * dx + fy * dy);
+    const c = fx * fx + fy * fy - radius * radius;
+
+    const disc = b * b - 4 * c;
+    if (disc < 0) return null;
+
+    const s = Math.sqrt(disc);
+    const t1 = (-b - s) / 2;
+    const t2 = (-b + s) / 2;
+
+    if (t1 > 0) return t1;
+    if (t2 > 0) return t2;
+    return null;
+  }
+
+  const RING_INNER_RADIUS = 250;
+  const RING_OUTER_RADIUS = 261;
+
+  function emitFromSun() {
+  const sun = document.getElementById("star");
+  if (!sun) return;
+
+  const r = sun.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+
+  const telescope = document.getElementById("telescope");
+  const tRect = telescope.getBoundingClientRect();
+  const tx = tRect.left + tRect.width / 2;
+  const ty = tRect.top + tRect.height / 2;
+
+  const baseAngle = Math.atan2(ty - cy, tx - cx);
+  const spread = Math.PI / 6;
+  const angle = baseAngle + (Math.random() - 0.5) * spread;
+
+  const ux = Math.cos(angle);
+  const uy = Math.sin(angle);
+
+  const hitRingInner = rayHitsCircle(cx, cy, ux, uy, cx, cy, RING_INNER_RADIUS);
+
+  function rayToEdgeDistance(ox, oy, dx, dy) {
+    const margin = 10;
+    const distToRight = dx > 0 ? (window.innerWidth - ox + margin) / dx : Infinity;
+    const distToLeft  = dx < 0 ? (0 - ox - margin) / dx : Infinity;
+    const distToBottom= dy > 0 ? (window.innerHeight - oy + margin) / dy : Infinity;
+    const distToTop   = dy < 0 ? (0 - oy - margin) / dy : Infinity;
+    return Math.min(distToRight, distToLeft, distToBottom, distToTop);
+  }
+
+  const p = document.createElement("span");
+  p.className = "particle";
+
+  const size = 10;
+  p.style.width = size + "px";
+  p.style.height = size + "px";
+  p.style.left = cx + "px";
+  p.style.top = cy + "px";
+  p.style.backgroundColor = currentHex;
+
+  const speed = 0.25; // px/ms
+
+  const hitTel1 = rayIntersectsRect(cx, cy, ux, uy, tRect);
+
+  if (hitRingInner === null || !scatterOnPhotosphere) {
+    let dist = rayToEdgeDistance(cx, cy, ux, uy);
+
+    if (hitTel1 !== null) dist = Math.min(dist, hitTel1);
+
+    const life = dist / speed;
+
+    p.style.setProperty("--dx", ux * dist + "px");
+    p.style.setProperty("--dy", uy * dist + "px");
+    p.style.setProperty("--life", life + "ms");
+
+    document.body.appendChild(p);
+    p.addEventListener("animationend", () => p.remove());
+    return;
+  }
+
+  let dist1 = hitRingInner;
+
+  if (hitTel1 !== null) dist1 = Math.min(dist1, hitTel1);
+
+  const life1 = dist1 / speed;
+
+  p.style.setProperty("--dx", ux * dist1 + "px");
+  p.style.setProperty("--dy", uy * dist1 + "px");
+  p.style.setProperty("--life", life1 + "ms");
+
+  document.body.appendChild(p);
+
+  p.addEventListener(
+    "animationend",
+    () => {
+      if (hitTel1 !== null && dist1 === hitTel1) {
+        p.remove();
+        return;
+      }
+
+      const hitX = cx + ux * dist1;
+      const hitY = cy + uy * dist1;
+
+      p.style.left = hitX + "px";
+      p.style.top = hitY + "px";
+
+      const a2 = Math.random() * Math.PI * 2;
+      const sx = Math.cos(a2);
+      const sy = Math.sin(a2);
+
+      const hitTel2 = rayIntersectsRect(hitX, hitY, sx, sy, tRect);
+
+      let dist2 = rayToEdgeDistance(hitX, hitY, sx, sy);
+
+      if (hitTel2 !== null) dist2 = Math.min(dist2, hitTel2);
+
+      const life2 = dist2 / speed;
+
+      p.style.animation = "none";
+      p.offsetHeight; // force reflow
+      p.style.setProperty("--dx", sx * dist2 + "px");
+      p.style.setProperty("--dy", sy * dist2 + "px");
+      p.style.setProperty("--life", life2 + "ms");
+      p.style.animation = `flyOut ${life2}ms linear forwards`;
+
+      p.addEventListener("animationend", () => p.remove(), { once: true });
+    },
+    { once: true }
+  );
+}
+
+
+
+  // Emit a small burst periodically
+  setInterval(() => {
+    const burstCount = 6;
+    for (let i = 0; i < burstCount; i++) emitFromSun();
+  }, 300);
+
+  // --- Continuous spectrum sampling (unchanged) ---
+  const spectrumImg = document.getElementById("continuousSpectrum");
+  const spectrumCanvas = document.getElementById("spectrumCanvas");
+  const ctx = spectrumCanvas.getContext("2d", { willReadFrequently: true });
+
+  let currentRgb = "rgb(255,255,255)";
+  let currentHex = "#ffffff";
+
+  spectrumImg.onload = () => {
+    ctx.drawImage(spectrumImg, 0, 0, spectrumCanvas.width, spectrumCanvas.height);
+  };
+
+  function toHex(n) {
+    return n.toString(16).padStart(2, "0");
+  }
+
+  function sampleSpectrumColor(v) {
+    v = Math.max(0, Math.min(1, v));
+    const x = Math.round(v * (spectrumCanvas.width - 1));
+
+    const pixel = ctx.getImageData(x, 0, 1, 1).data; // [r,g,b,a]
+    const r = pixel[0],
+      g = pixel[1],
+      b = pixel[2];
+
+    currentRgb = `rgb(${r}, ${g}, ${b})`;
+    currentHex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
+      function checkEmission(){
+        if (globalEl == "hydrogen"){
+          if ((spectralValue > 0.0012447959498355264) && (spectralValue < 0.004822580437911184)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.07453565095600329) && (spectralValue < 0.07884457236842106)) {
+            scatterOnPhotosphere = true;
+        } else if ((spectralValue > 0.22940995065789474) && (spectralValue < 0.23655427631578949)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.6940378289473684) && (spectralValue < 0.6999726947985198)) {
+            scatterOnPhotosphere = true;
+          } else {
+            scatterOnPhotosphere = false;
+          }
+      } else if (globalEl == "helium") {
+          if ((spectralValue > 0.11131977282072368) && (spectralValue < 0.11808873226768092)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.1682943243729441) && (spectralValue < 0.17687924033717106)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.24180105108963815) && (spectralValue < 0.24895485325863487)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.26195726896587174) && (spectralValue < 0.2683902138157895)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.48723947625411185) && (spectralValue < 0.4942151521381579)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.7173323781866776) && (spectralValue < 0.7234998201069079)) {
+            scatterOnPhotosphere = true;
+          } else {
+            scatterOnPhotosphere = false;
+          }
+        } else if (globalEl == "lithium") {
+          if ((spectralValue > 0.5831375925164474) && (spectralValue < 0.5889288651315789)) {
+            scatterOnPhotosphere = true;
+          } else if ((spectralValue > 0.7480263157894737) && (spectralValue < 0.7564350328947368)) {
+            scatterOnPhotosphere = true;
+          } else {
+            scatterOnPhotosphere = false;
+          }
+        }
+      }
+
+const tourOverlay = document.getElementById("tourOverlay");
+const tourTooltip = document.getElementById("tourTooltip");
+const tourText = document.getElementById("tourText");
+const tourClose = document.getElementById("tourClose");
+const tourNext = document.getElementById("tourNext");
+
+const tourSteps = [
+  {
+    text: "This site approximates the photosphere's absorption and re-emission of specific wavelengths of light emitted by the sun.",
+    placement: "center",
+  },
+  {
+    text: "You can change the wavelength of photons you are viewing being emitted from the sun by moving the arrow slider along the visible light spectrum.",
+    placement: "target",
+    target: "#spectralArrow",
+    align: "top",
+    offset: 14
+  },
+  {
+    text: "You can change which element in the photosphere you are viewing by using the element selector.",
+    placement: "target",
+    target: "#strip",
+    align: "top",
+    offset: 14
+  }
+];
+
+let tourIndex = 0;
+
+function showTour() {
+  tourOverlay.classList.remove("hidden");
+  tourIndex = 0;
+  renderTourStep();
+}
+
+function hideTour() {
+  tourOverlay.classList.add("hidden");
+}
+
+function renderTourStep() {
+  const step = tourSteps[tourIndex];
+  tourText.textContent = step.text;
+
+  tourNext.textContent = (tourIndex === tourSteps.length - 1) ? "Done" : "Next";
+
+  if (step.placement === "center") {
+    const w = tourTooltip.offsetWidth;
+    const h = tourTooltip.offsetHeight;
+    tourTooltip.style.left = (window.innerWidth / 2) + "px";
+    tourTooltip.style.top = (window.innerHeight / 2) + "px";
+    tourTooltip.style.transform = "translate(-50%, -50%)";
+    return;
+  }
+
+  const el = document.querySelector(step.target);
+  if (!el) {
+    tourTooltip.style.left = "50%";
+    tourTooltip.style.top = "50%";
+    tourTooltip.style.transform = "translate(-50%, -50%)";
+    return;
+  }
+
+  const rect = el.getBoundingClientRect();
+  const offset = step.offset ?? 12;
+
+  tourTooltip.style.transform = "translate(0,0)";
+  const tipW = tourTooltip.offsetWidth;
+  const tipH = tourTooltip.offsetHeight;
+
+  let x = 0, y = 0;
+
+  switch (step.align) {
+    case "right":
+      x = rect.right + offset;
+      y = rect.top + rect.height / 2 - tipH / 2;
+      break;
+
+    case "left":
+      x = rect.left - offset - tipW;
+      y = rect.top + rect.height / 2 - tipH / 2;
+      break;
+
+    case "top":
+      x = rect.left + rect.width / 2 - tipW / 2;
+      y = rect.top - offset - tipH;
+      break;
+
+    case "bottom":
+    default:
+      x = rect.left + rect.width / 2 - tipW / 2;
+      y = rect.bottom + offset;
+      break;
+  }
+
+  const pad = 10;
+  x = Math.max(pad, Math.min(x, window.innerWidth - tipW - pad));
+  y = Math.max(pad, Math.min(y, window.innerHeight - tipH - pad));
+
+  tourTooltip.style.left = x + "px";
+  tourTooltip.style.top = y + "px";
+  tourTooltip.style.transform = "translate(0,0)";
+}
+
+tourClose.addEventListener("click", hideTour);
+
+tourNext.addEventListener("click", () => {
+  if (tourIndex === tourSteps.length - 1) {
+    hideTour();
+    return;
+  }
+  tourIndex++;
+  renderTourStep();
+});
+
+window.addEventListener("resize", () => {
+  if (!tourOverlay.classList.contains("hidden")) renderTourStep();
+});
+
+window.addEventListener("load", () => {
+  if (!localStorage.getItem("tourSeen")) {
+    showTour();
+    localStorage.setItem("tourSeen", "1");
+  }
+});
+
+
+
+        setInterval(checkEmission, 50);
+      
+</script>
+
+  </body>
+</html>
