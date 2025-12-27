@@ -198,6 +198,44 @@
   color: #111;
 }
 
+      a{color:inherit;text-decoration:none;}
+    .container{width:min(1100px,92%);margin:0 auto;}
+
+    .masthead{padding:28px 0 8px;}
+    .mast-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+    .name{font-weight:800;font-size:clamp(22px,4vw,28px);letter-spacing:.3px;}
+    .subtitle{color:var(--muted);font-size:14px;margin-top:2px;}
+
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 14px;border-radius:12px;
+      border:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+      font-weight:600;box-shadow:var(--shadow);
+      transition:transform .2s ease;
+    }
+    .btn:hover{transform:translateY(-1px);}
+    .btn-primary{
+      background:linear-gradient(270deg,var(--brand),var(--brand-2),var(--brand));
+      background-size:200% 200%;
+      animation:gradientMove 5s ease infinite;
+      border-color:rgba(124,58,237,.5);
+      color:#fff;
+    }
+    .btn-ghost{background:transparent;border-color:var(--border);}
+
+    @keyframes gradientMove{
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+      #bmac {
+        bottom: 10px;
+        left: 10px;
+        position: absolute;
+      }
+
 
     </style>
   </head>
@@ -243,7 +281,12 @@
           <img src="arrow.png" id="spectralArrow" draggable="false" />
         </div>
       </div>
+
+      <a href="https://www.buymeacoffee.com/jesssilver" target="_blank" rel="noopener" class="btn btn-primary" id="bmac" style="font-size:16px; padding:12px 22px; border-radius:50px;">
+          ☕ Buy Me a Coffee
+        </a>
     </div>
+    
 
 <div id="tourOverlay" class="tour-overlay hidden">
   <div id="tourTooltip" class="tour-tooltip">
